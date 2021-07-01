@@ -3,8 +3,9 @@
 from django import forms
 
 from nautobot.utilities.forms import BootstrapMixin
+from nautobot.extras.forms import PasswordInputWithPlaceholder
 
-from .models import AccessGrant, CommandToken
+from .models import AccessGrant, CommandToken, ChatInstance
 from .choices import AccessGrantTypeChoices, CommandTokenPlatformChoices
 
 
@@ -65,3 +66,32 @@ class CommandTokenForm(BootstrapMixin, forms.ModelForm):
         model = CommandToken
 
         fields = ("platform", "comment", "token")
+
+
+class ChatInstanceForm(BootstrapMixin, forms.ModelForm):
+
+    platform = forms.ChoiceField(choices=CommandTokenPlatformChoices.CHOICES, required=True)
+
+    _token = forms.CharField(
+        required=False,
+        label="Token",
+        widget=PasswordInputWithPlaceholder(placeholder=ChatInstance.TOKEN_PLACEHOLDER),
+    )
+
+    api_url = forms.URLField(
+        required=False,
+        label="API URL",
+        help_text="URL for the Chat Platform API.",
+    )
+
+    slash_prefix = forms.CharField(
+        required=True,
+        label="Prefix for Chat Commands. Defaults to '/'",
+        initial="/"
+    )
+
+    class Meta:
+
+        model = ChatInstance
+
+        fields = ("platform", "_token", "api_url", "slash_prefix")

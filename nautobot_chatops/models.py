@@ -3,6 +3,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
+from django_cryptography.fields import encrypt
 
 from nautobot.utilities.fields import ColorField
 from nautobot.extras.models.change_logging import ChangeLoggedModel
@@ -113,3 +114,26 @@ class CommandToken(BaseModel, ChangeLoggedModel):
         """Meta-attributes of a CommandToken."""
 
         ordering = ["platform", "token", "comment"]
+
+
+class ChatInstance(BaseModel, ChangeLoggedModel):
+    """Slash Prefix and API Token associated to a Chat Instance."""
+
+    TOKEN_PLACEHOLDER = "********"
+
+    platform = models.CharField(max_length=32, choices=CommandTokenPlatformChoices)
+    # Mark field as private so that it doesn't get included in ChangeLogging Records.
+    _token = encrypt(models.CharField(max_length=255, help_text="API Token to log into chat platform."))
+    api_url = models.CharField(max_length=255, blank=True, help_text="Chat Platform API URL.")
+    slash_prefix = models.CharField(max_length=32, default="/", help_text="Slash Prefix to be used in front of commands.")
+
+    class Meta:
+        """Meta-attributes of a ChatInstance"""
+        unique_together = ('platform', 'slash_prefix')
+
+    @property
+    def token_rendered(self):
+        if self._token:
+            return self.TOKEN_PLACEHOLDER
+        else:
+            return "—"
